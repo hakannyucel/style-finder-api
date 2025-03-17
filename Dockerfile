@@ -12,4 +12,4 @@ RUN npm install
 
 COPY . .
 
-CMD ["node", "server.js"]
+CMD ["node", "--expose-gc", "--max-old-space-size=400", "server.js"]
