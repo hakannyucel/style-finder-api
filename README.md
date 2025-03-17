@@ -1,19 +1,25 @@
 # Style Finder API
 
-Style Finder API is an open-source tool that allows you to analyze typography styles of websites. This API extracts and analyzes all typography properties (font family, size, weight, line height, etc.) from a specified website.
+Style Finder API is an open-source tool that allows you to analyze typography styles and colors of websites. This API extracts and analyzes typography properties (font family, size, weight, line height, etc.), colors, and gradients from a specified website.
 
 ## 🚀 Features
 
-- Automatically extract all typography styles from websites
-- Analyze properties such as font family, size, weight, line height, letter spacing
-- Automatically group duplicate styles
+- Extract all typography styles from websites
+- Analyze typography properties such as font family, size, weight, line height, letter spacing
+- Extract and categorize all colors used on the website
+- Identify and analyze gradients used in the design
+- Retrieve the page title of the analyzed website
+- Group duplicate styles automatically
 - Provide CSS meta information (external CSS count, inline CSS count, typography rules count)
 - Present usage statistics of HTML tags
+- Cache results to improve performance and reduce scraping frequency
+- Stealth mode to avoid being blocked by websites
 
 ## 📋 Requirements
 
 - Node.js (v14 or higher)
 - npm or yarn
+- Chrome/Chromium (for production environments)
 
 ## 🔧 Installation
 
@@ -28,16 +34,45 @@ cd style-finder-api
 npm install
 ```
 
-3. Start the application:
+3. Configure environment variables:
+```
+# Create a .env file with the following variables
+PORT=3000
+NODE_ENV=development
+STEALTH_MODE=true
+SERVER_TIMEOUT=120000
+PUPPETEER_TIMEOUT=60000
+MAX_RETRIES=3
+RETRY_DELAY=2000
+```
+
+4. Start the application:
 ```bash
 npm start
 ```
 
-The application will run on port 3000 by default. You can change the port number by setting the `PORT` environment variable.
+For development with auto-reload:
+```bash
+npm run dev
+```
+
+The application will run on port 3000 by default (or as configured in your .env file).
+
+## 🐳 Docker Support
+
+You can also run the application using Docker:
+
+```bash
+# Build the Docker image
+docker build -t style-finder-api .
+
+# Run the container
+docker run -p 3000:3000 --env-file .env style-finder-api
+```
 
 ## 🔍 Usage
 
-### Typography Analysis
+### Website Style Analysis
 
 ```
 GET /scrape?url=https://example.com
@@ -46,12 +81,14 @@ GET /scrape?url=https://example.com
 #### Parameters:
 
 - `url`: URL of the website to be analyzed (required)
+- `nocache`: Set to 'true' to bypass cache and force a new scrape (optional)
 
 #### Example Response:
 
 ```json
 {
   "url": "https://example.com",
+  "title": "Example Domain",
   "typography": [
     {
       "tag": "h1",
@@ -67,6 +104,35 @@ GET /scrape?url=https://example.com
     },
     // ... other typography styles
   ],
+  "colors": [
+    {
+      "name": "Black",
+      "hex": "#000000",
+      "rgb": "rgb(0, 0, 0)",
+      "count": 15
+    },
+    // ... other colors
+  ],
+  "gradients": [
+    {
+      "type": "linear-gradient",
+      "angle": "45deg",
+      "colors": [
+        {
+          "position": "0%",
+          "color": "#ff0000",
+          "colorName": "Red"
+        },
+        {
+          "position": "100%",
+          "color": "#0000ff",
+          "colorName": "Blue"
+        }
+      ],
+      "count": 3
+    },
+    // ... other gradients
+  ],
   "meta": {
     "externalCSSCount": 2,
     "inlineCSSCount": 5,
@@ -81,6 +147,27 @@ GET /scrape?url=https://example.com
     "totalTagsFound": 15
   }
 }
+```
+
+## ⚙️ Project Structure
+
+```
+style-finder-api/
+├── .env                    # Environment variables
+├── Dockerfile              # Docker configuration
+├── package.json            # Project dependencies and scripts
+├── server.js               # Main server entry point
+├── src/
+│   ├── controllers/
+│   │   └── scrapeController.js   # Main endpoint controller
+│   ├── services/
+│   │   ├── colorService.js       # Color extraction logic
+│   │   ├── gradientService.js    # Gradient extraction logic
+│   │   ├── titleService.js       # Page title extraction
+│   │   └── typographyService.js  # Typography extraction logic
+│   └── utils/
+│       ├── colorUtils.js         # Color manipulation utilities
+│       └── memoryUtils.js        # Memory management utilities
 ```
 
 ## 🤝 Contributing
