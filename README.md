@@ -35,37 +35,12 @@ npm start
 
 The application will run on port 3000 by default. You can change the port number by setting the `PORT` environment variable.
 
-## 🚀 Deployment
-
-### Deploy to Vercel
-
-You can easily deploy this API to Vercel with a few clicks:
-
-1. Fork this repository
-2. Sign up or log in to [Vercel](https://vercel.com)
-3. Click on "New Project" and import your forked repository
-4. Vercel will automatically detect the configuration and deploy your API
-5. Once deployed, you can access your API at the provided Vercel URL
-
-Alternatively, you can deploy directly from the command line:
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Login to Vercel
-vercel login
-
-# Deploy
-vercel
-```
-
 ## 🔍 Usage
 
 ### Typography Analysis
 
 ```
-GET /typography?url=https://example.com
+GET /scrape?url=https://example.com
 ```
 
 #### Parameters:
