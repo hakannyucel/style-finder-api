@@ -5,9 +5,23 @@
  */
 const extractTypography = async (page) => {
   return await page.evaluate(() => {
+    // All typography properties we'll collect
     const typographyProps = [
       "font-family", "font-size", "font-weight", "line-height",
       "letter-spacing", "text-transform", "font-style", "text-decoration"
+    ];
+
+    // Properties to use for grouping
+    const groupingProps = [
+      "font-family", "font-size", "font-weight", "line-height", "letter-spacing"
+    ];
+
+    // Define typography-relevant tags to filter by
+    const relevantTags = [
+      'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+      'a', 'button', 'label', 'li', 'th', 'td', 'caption',
+      'blockquote', 'figcaption', 'cite', 'q', 'strong', 'em',
+      'small', 'pre', 'code', 'div'
     ];
 
     const groups = {};
@@ -18,6 +32,11 @@ const extractTypography = async (page) => {
     const elements = Array.from(document.querySelectorAll('*'));
     elements.forEach(el => {
       const tag = el.tagName.toLowerCase();
+      
+      // Skip if tag is not in our relevant typography tags list
+      if (!relevantTags.includes(tag)) {
+        return;
+      }
 
       // Checking for error possibilities in className
       let className = '';
@@ -42,8 +61,8 @@ const extractTypography = async (page) => {
         styleObj[prop] = val;
       });
 
-      // Group key: combination of tag, className and typography properties
-      const key = tag + '|' + className + '|' + typographyProps.map(prop => styleObj[prop]).join('|');
+      // Group key: combination of tag and only the specified grouping properties
+      const key = tag + '|' + groupingProps.map(prop => styleObj[prop]).join('|');
       if (groups[key]) {
         groups[key].count++;
         duplicatesRemoved++;
@@ -58,10 +77,12 @@ const extractTypography = async (page) => {
       tagCounts[tag] = (tagCounts[tag] || 0) + 1;
     });
 
-    // Converting grouped typography information to array without duplicate count
+    // Converting grouped typography information to array
     const typography = Object.values(groups).map(group => {
-      const { count, ...rest } = group;
-      return rest;
+      // Include count in the returned data to show how many instances were found
+      return {
+        ...group
+      };
     });
 
     // Sorting by font-size from largest to smallest
