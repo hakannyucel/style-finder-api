@@ -88,7 +88,24 @@ const navigateToUrl = async (page, url, timeout) => {
 const scrapeWebsite = async (req, res, next) => {
   const { url, nocache } = req.query;
   if (!url) {
-    return res.status(400).json({ error: 'url parameter is required.' });
+    return res.status(400).json({ 
+      status: "error",
+      code: "MISSING_URL",
+      message: "URL parameter is required.",
+      details: "Please provide a valid URL to analyze."
+    });
+  }
+
+  // Validate URL format
+  try {
+    new URL(url);
+  } catch (error) {
+    return res.status(400).json({
+      status: "error",
+      code: "INVALID_URL_FORMAT",
+      message: "The provided URL is invalid.",
+      details: "Please provide a valid URL with proper format (e.g., https://example.com)"
+    });
   }
 
   // Use cache unless nocache is specified
@@ -243,6 +260,7 @@ const scrapeWebsite = async (req, res, next) => {
     
     // Build the response object
     const result = {
+      status: "success",
       url,
       title: titleResult,
       ...typographyResult,
@@ -263,35 +281,93 @@ const scrapeWebsite = async (req, res, next) => {
   } catch (error) {
     console.error(`Scraping error for ${url}:`, error);
     
-    // Check for specific network errors
+    // Define standard error response structure
+    const errorResponse = {
+      status: "error",
+      url,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Check for specific network and HTTP errors
     if (error.message.includes('net::ERR_NETWORK_CHANGED')) {
       return res.status(503).json({
-        error: 'Network Connection Issue',
-        details: 'Network connection changed during request. Please try again.'
+        ...errorResponse,
+        code: "NETWORK_CHANGED",
+        message: "Network connection issue",
+        details: "Network connection changed during request. Please try again."
       });
     } else if (error.message.includes('Navigation timeout')) {
       return res.status(504).json({
-        error: 'Gateway Timeout',
-        details: 'The page took too long to load. The website might be too complex or unavailable.'
+        ...errorResponse,
+        code: "GATEWAY_TIMEOUT",
+        message: "Gateway timeout",
+        details: "The page took too long to load. The website might be too complex or unavailable."
       });
     } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
       return res.status(400).json({
-        error: 'Invalid URL',
-        details: 'The URL provided could not be resolved. Please check it and try again.'
+        ...errorResponse,
+        code: "DOMAIN_NOT_FOUND",
+        message: "Domain not found",
+        details: "The URL provided could not be resolved. Please check it and try again."
       });
     } else if (error.message.includes('ERR_CONNECTION_REFUSED')) {
       return res.status(503).json({
-        error: 'Connection Refused',
-        details: 'The server refused the connection. The site might be down or blocking requests.'
+        ...errorResponse,
+        code: "CONNECTION_REFUSED",
+        message: "Connection refused",
+        details: "The server refused the connection. The site might be down or blocking requests."
       });
     } else if (error.message.includes('ERR_CONNECTION_TIMED_OUT')) {
       return res.status(504).json({
-        error: 'Connection Timeout',
-        details: 'The connection to the server timed out. Please try again later.'
+        ...errorResponse,
+        code: "CONNECTION_TIMEOUT",
+        message: "Connection timeout",
+        details: "The connection to the server timed out. Please try again later."
+      });
+    } else if (error.message.includes('404')) {
+      return res.status(404).json({
+        ...errorResponse,
+        code: "PAGE_NOT_FOUND",
+        message: "Page not found",
+        details: "The requested page does not exist on the target website."
+      });
+    } else if (error.message.includes('403')) {
+      return res.status(403).json({
+        ...errorResponse,
+        code: "ACCESS_FORBIDDEN",
+        message: "Access forbidden",
+        details: "The target website has forbidden access to this page."
+      });
+    } else if (error.message.includes('net::ERR_ABORTED')) {
+      return res.status(500).json({
+        ...errorResponse,
+        code: "REQUEST_ABORTED",
+        message: "Request aborted",
+        details: "The request was aborted. The website might be blocking scraping attempts."
+      });
+    } else if (error.message.includes('net::ERR_CERT')) {
+      return res.status(526).json({
+        ...errorResponse,
+        code: "SSL_ERROR",
+        message: "SSL certificate error",
+        details: "The website has an invalid SSL certificate."
+      });
+    } else if (error.message.includes('Protocol error')) {
+      return res.status(500).json({
+        ...errorResponse,
+        code: "PROTOCOL_ERROR",
+        message: "Protocol error",
+        details: "A protocol error occurred while communicating with the website."
       });
     }
     
-    next(error);
+    // Generic error for all other cases
+    return res.status(500).json({
+      ...errorResponse,
+      code: "INTERNAL_ERROR",
+      message: "Internal server error",
+      details: "An unexpected error occurred while processing your request."
+    });
   } finally {
     if (browser) {
       try {

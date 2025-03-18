@@ -14,6 +14,7 @@ Style Finder API is an open-source tool that allows you to analyze typography st
 - Present usage statistics of HTML tags
 - Cache results to improve performance and reduce scraping frequency
 - Stealth mode to avoid being blocked by websites
+- Comprehensive error handling with detailed error messages
 
 ## 📋 Requirements
 
@@ -83,10 +84,11 @@ GET /scrape?url=https://example.com
 - `url`: URL of the website to be analyzed (required)
 - `nocache`: Set to 'true' to bypass cache and force a new scrape (optional)
 
-#### Example Response:
+#### Example Success Response:
 
 ```json
 {
+  "status": "success",
   "url": "https://example.com",
   "title": "Example Domain",
   "typography": [
@@ -148,6 +150,39 @@ GET /scrape?url=https://example.com
   }
 }
 ```
+
+#### Error Response Format:
+
+The API provides detailed error responses when issues occur:
+
+```json
+{
+  "status": "error",
+  "code": "ERROR_CODE",
+  "message": "Human-readable error message",
+  "details": "Detailed explanation about the error",
+  "url": "https://example.com",
+  "timestamp": "2023-06-15T10:30:00.000Z"
+}
+```
+
+#### Common Error Codes:
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| MISSING_URL | 400 | URL parameter is missing in the request |
+| INVALID_URL_FORMAT | 400 | The provided URL has an invalid format |
+| DOMAIN_NOT_FOUND | 400 | The domain couldn't be resolved |
+| PAGE_NOT_FOUND | 404 | The requested page doesn't exist (404) |
+| ACCESS_FORBIDDEN | 403 | Access to the page is forbidden (403) |
+| CONNECTION_REFUSED | 503 | The server refused the connection |
+| CONNECTION_TIMEOUT | 504 | The connection to the server timed out |
+| GATEWAY_TIMEOUT | 504 | Navigation timeout occurred |
+| NETWORK_CHANGED | 503 | Network connection changed during request |
+| SSL_ERROR | 526 | The website has an invalid SSL certificate |
+| REQUEST_ABORTED | 500 | The request was aborted |
+| PROTOCOL_ERROR | 500 | A protocol error occurred |
+| INTERNAL_ERROR | 500 | Generic internal server error |
 
 ## ⚙️ Project Structure
 
